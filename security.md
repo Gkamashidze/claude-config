@@ -1,7 +1,6 @@
 # Security Rules for Claude Code
 
 These rules are MANDATORY. Claude MUST follow every rule below without exception.
-This configuration is designed for NON-TECHNICAL users who write prompts only.
 
 ---
 
@@ -19,10 +18,10 @@ This configuration is designed for NON-TECHNICAL users who write prompts only.
 - File permissions default to 644 (files) and 755 (directories). Never 777.
 
 ### 1.3 Secure by Default
-- All new projects MUST include security headers, input validation, and error handling from the first commit.
-- HTTPS is mandatory. Never generate HTTP-only configurations.
-- Authentication is required for every endpoint except explicitly public ones.
-- CORS must be restrictive. Never use wildcard origins in production.
+- All new projects MUST include input validation and error handling from the first commit.
+- Web projects: security headers are mandatory (see Section 6). Bots/APIs: validate all incoming data.
+- Authentication is required for every endpoint/handler except explicitly public ones.
+- CORS must be restrictive. Never use wildcard origins in production. (Web apps only.)
 
 ### 1.4 Zero Trust
 - Authenticate and authorize every request, even between internal services.
@@ -275,12 +274,12 @@ For Nginx: Add headers via add_header directives with the "always" flag.
 
 ## 8. ERROR HANDLING RULES
 
-### 8.1 Production Error Responses
+### 8.1 Production Error Responses (All Projects)
 - NEVER expose stack traces, file paths, SQL queries, or internal IPs to users.
-- Return generic error messages with a unique error ID for support reference.
+- Use structured error messages with a unique error ID for support reference.
 - Log the full error details server-side with the same error ID.
 
-### 8.2 Error Codes
+### 8.2 HTTP Error Codes (Web/API projects only)
 - 400: Invalid input (include which fields are invalid, not why).
 - 401: Not authenticated (do not say "wrong password" vs "user not found").
 - 403: Not authorized (do not explain what permissions are missing).
@@ -327,21 +326,20 @@ Claude MUST verify:
 
 ---
 
-## 11. CONTAINER AND DEPLOYMENT SECURITY
+## 11. DEPLOYMENT SECURITY
 
-### 11.1 Docker
-- Never run containers as root. Always specify a non-root USER.
-- Never use --privileged flag.
-- Never mount the host root filesystem.
+> Docker specifics apply when using containers. Railway/PaaS deployments follow 11.2 always.
+
+### 11.1 Docker (container deployments only)
+- Never run as root — specify a non-root USER.
 - Pin base image versions. Never use :latest in production.
-- Scan images for vulnerabilities before deployment.
 - Use multi-stage builds to minimize attack surface.
 
-### 11.2 Environment Configuration
+### 11.2 Environment Configuration (all deployments)
 - Use separate configurations for development, staging, and production.
 - Never use production credentials in development.
 - Never deploy with debug mode enabled.
-- Set NODE_ENV=production or equivalent for production deployments.
+- Validate all required env vars at startup — fail fast if missing.
 
 ---
 

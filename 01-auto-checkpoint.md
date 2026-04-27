@@ -1,14 +1,14 @@
-# Auto-Checkpoint System
+# Auto-Checkpoint & Backup System
 
 > **Project CLAUDE.md can override checkpoint frequency and file-count limits.**
-> See `00-project-overrides.md`. If CLAUDE.md grants autonomous execution → skip confirmation steps.
+> If CLAUDE.md grants autonomous execution → skip confirmation steps.
 > Hard limits (never delete, never force-push) remain regardless.
 
-## When Claude MUST Auto-Commit (No User Permission Needed)
+## When Claude MUST Auto-Commit (No Permission Needed)
 
-1. **Before any multi-file change** (3+ files about to be modified)
-2. **Before touching configuration files** (package.json, tsconfig, .env, docker-compose, etc.)
-3. **After completing a working feature** that the user requested
+1. **Before any multi-file change** (3+ files)
+2. **Before touching configuration files** (pyproject.toml, railway.toml, .env, docker-compose, etc.)
+3. **After completing a working feature**
 4. **Before any refactoring operation**
 5. **Before installing or removing dependencies**
 6. **Before modifying database schemas or migrations**
@@ -17,60 +17,33 @@
 ## When Claude SHOULD Auto-Commit (Recommended)
 
 - After every 2 successful file edits
-- After fixing a bug that was verified working
-- Before switching to a different task/feature
+- After a verified bug fix
+- Before switching tasks
 
 ## Commit Message Format
 
 ```
-CHECKPOINT: [plain-language description]
+CHECKPOINT: [description]
 
-What was done: [1-2 sentences a non-coder can understand]
-Files changed: [list of filenames only, no paths]
+What was done: [1-2 sentences]
+Files changed: [filenames only]
 Status: [WORKING | IN-PROGRESS | EXPERIMENTAL]
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
 ```
-
-Examples:
-- `CHECKPOINT: Added the contact form to the homepage — Status: WORKING`
-- `CHECKPOINT: Before changing the navigation menu — Status: IN-PROGRESS`
-
-## Restore from Checkpoint
-
-When a user says any of these, Claude must restore:
-- "Undo the last change" / "Go back to when it was working"
-- "Restore the last save" / "That broke things, go back" / "Revert"
-
-### Restore Procedure
-1. Run `git log --oneline -20` to find recent checkpoints
-2. Present the user with plain-language options:
-   ```
-   I found these save points:
-   1. "Added the contact form" (2 minutes ago) — WORKING
-   2. "Before changing navigation" (15 minutes ago) — WORKING
-   Which one should I go back to?
-   ```
-3. After user picks, run `git checkout <hash> -- .` to restore files
-4. Create a new checkpoint: `CHECKPOINT: Restored to "[description]"`
 
 ## File Count Thresholds
 
-If project CLAUDE.md grants autonomous execution → **skip all thresholds below**.
+If project CLAUDE.md grants autonomous execution → **skip thresholds below**.
 
-Otherwise (default):
-- **3 files changed** = checkpoint REQUIRED before continuing
-- **5 files changed** = checkpoint REQUIRED + summarize changes to user
-- **10+ files changed** = checkpoint + summarize + ask permission to continue
+Otherwise:
+- **3 files** = checkpoint REQUIRED before continuing
+- **5 files** = checkpoint REQUIRED + summarize to user
+- **10+ files** = checkpoint + summarize + ask permission
 
-## Implementation
+## Auto-Commit Command
 
-Before making changes, mentally check:
-1. How many files will this touch?
-2. Is there a checkpoint of the current working state?
-3. If not, create one NOW before proceeding.
-
-Auto-commit command — stage specific files, never blindly stage everything:
 ```bash
-# Stage only the files you changed (by name), then commit:
 git add <file1> <file2> <file3> && git commit -m "$(cat <<'EOF'
 CHECKPOINT: [description]
 
@@ -83,5 +56,33 @@ EOF
 )"
 ```
 
-Never use `git add -A` or `git add .` in checkpoints — these may accidentally stage
-`.env`, credentials, or large generated files. Always name the files explicitly.
+Never use `git add -A` or `git add .` — name files explicitly to avoid staging `.env` or credentials.
+
+## Restore from Checkpoint
+
+When user says "go back", "undo", "restore", "revert":
+
+1. `git log --oneline -20` — find recent checkpoints
+2. Show options in plain language with timestamps
+3. `git checkout <hash> -- .` to restore
+4. Create new checkpoint: `CHECKPOINT: Restored to "[description]"`
+
+## File-Level Backups (for critical single files)
+
+For `.env`, database configs, or any file without git coverage:
+```bash
+cp important-file.txt important-file.txt.backup-$(date +%Y%m%d-%H%M%S)
+```
+
+For data files (CSV, JSON) being transformed:
+1. Copy original to `.original` version first
+2. Work on the copy
+3. Delete `.original` only after user confirms result is correct
+
+Backup files older than 7 days → suggest cleanup, never auto-delete.
+
+## When the User Says "I Lost Something"
+
+1. Check `git log` for recent checkpoints
+2. Check for `.backup`, `.original`, `.old` files
+3. If not found: "I cannot find a backup of that file. It may not have been saved."

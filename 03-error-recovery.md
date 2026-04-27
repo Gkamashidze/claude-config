@@ -13,32 +13,26 @@ If an error occurs after Claude makes a change, follow this procedure:
 
 ### Step 2: Communicate Clearly
 
-Use this template when reporting errors to non-technical users:
+Use this template when reporting errors:
 
 ```
-Something went wrong: [one plain-language sentence]
-
-What happened: [simple explanation without jargon]
-What I am doing about it: [the fix in plain terms]
-Your data is: [SAFE / AT RISK -- if at risk, explain what]
+Error: [one sentence — what broke and why]
+Impact: [what the user sees / what doesn't work]
+Action: [what I'm doing to fix it]
+Data: [SAFE / AT RISK — if at risk, explain]
 ```
 
-NEVER say:
-- "There's a TypeError in the component lifecycle"
-- "The build failed with exit code 1"
-- "Null reference exception at line 47"
-
-INSTEAD say:
-- "The contact form stopped showing up because of a typo I made. Fixing it now."
-- "The page went blank because a file I edited had a mistake. I am restoring the previous version."
-- "The save feature is broken because the connection settings got mixed up. Let me put them back."
+Be direct and technical — use real error names, file paths, and status codes. Example:
+- "TelegramRetryAfter raised in bulk sender — sleeping 30s then retrying."
+- "asyncpg.UniqueViolationError on product insert — barcode already exists in DB."
+- "mypy type error in handler — fixing and re-running."
 
 ### Step 3: Fix Procedure
 
 1. **If it is a simple typo or small mistake**: Fix it immediately, verify it works, tell the user
 2. **If the fix is unclear**: Restore the last working checkpoint FIRST, then investigate
 3. **If multiple things broke**: Do NOT try to fix them all at once. Restore checkpoint. Start over with a smaller change.
-4. **If you cannot fix it after 2 attempts**: Stop. Tell the user honestly. Suggest they run `/rewind` or say "go back to when it was working."
+4. **If you cannot fix it after 2 attempts**: Stop. Explain what's wrong, what you tried, and what the next step is. Suggest restoring the last checkpoint.
 
 ### Step 4: Post-Recovery
 
@@ -70,7 +64,7 @@ When the user says any of these, enter diagnosis mode:
 If Claude's fix attempt fails twice:
 - STOP trying the same approach
 - Restore to the last working checkpoint
-- Tell the user: "My approach is not working. I have restored your project to when it was working. Let me try a completely different way, or you can tell me more about what you need."
+- Restore to last working checkpoint and explain what failed and why a different approach is needed.
 
 ## Preventing Cascading Failures
 
